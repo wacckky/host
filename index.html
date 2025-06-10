@@ -17,22 +17,12 @@
       font-size: 2rem;
       margin: 1rem 0;
     }
-    #chart-container {
-      width: 100%;
-      max-width: 600px;
-      margin: 0 auto;
-    }
   </style>
-  <!-- Chart.js from CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <h1>🎤 Live Microphone dB Meter</h1>
   <p>Allow microphone access when prompted.</p>
   <div id="out">dB: 0.00</div>
-  <div id="chart-container">
-    <canvas id="dbChart"></canvas>
-  </div>
 
   <script>
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -47,40 +37,6 @@
           source.connect(analyser);
           const dataArray = new Uint8Array(analyser.fftSize);
 
-          // Setup Chart.js
-          const ctx = document.getElementById('dbChart').getContext('2d');
-          const maxPoints = 30;
-          const dbChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-              labels: Array(maxPoints).fill(''),  // placeholders
-              datasets: [{
-                label: 'dB Level',
-                data: Array(maxPoints).fill(null),
-                fill: false,
-                borderColor: 'rgba(75, 192, 192, 1)',
-                tension: 0.1,
-              }]
-            },
-            options: {
-              animation: false,
-              scales: {
-                x: {
-                  display: false  // hide x-axis entirely
-                },
-                y: {
-                  display: true,
-                  title: { display: true, text: 'dB' },
-                  suggestedMin: -100,
-                  suggestedMax: 0
-                }
-              },
-              plugins: {
-                legend: { display: false }
-              }
-            }
-          });
-
           function updateMeter() {
             analyser.getByteTimeDomainData(dataArray);
             let sum = 0;
@@ -91,20 +47,11 @@
             const rms = Math.sqrt(sum / dataArray.length);
             const db = 20 * Math.log10(rms + 1e-6);
 
-            // Update text
+            // Update text only
             document.getElementById("out").innerText = `dB: ${db.toFixed(2)}`;
-
-            // Shift data array, push new value
-            const ds = dbChart.data.datasets[0].data;
-            ds.push(db);
-            if (ds.length > maxPoints) {
-              ds.shift();
-            }
-            // labels array remains placeholders or empty strings to keep length consistent
-            // (we initialized labels with empty strings)
-            dbChart.update();
           }
 
+          // Update every 200 ms
           setInterval(updateMeter, 200);
         })
         .catch(err => {
