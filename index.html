@@ -35,7 +35,6 @@
   </div>
 
   <script>
-    // Ensure browser supports getUserMedia
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       document.getElementById("out").innerText = "getUserMedia not supported";
     } else {
@@ -50,13 +49,14 @@
 
           // Setup Chart.js
           const ctx = document.getElementById('dbChart').getContext('2d');
+          const maxPoints = 30;
           const dbChart = new Chart(ctx, {
             type: 'line',
             data: {
-              labels: [],  // time labels
+              labels: Array(maxPoints).fill(''),  // placeholders
               datasets: [{
                 label: 'dB Level',
-                data: [],
+                data: Array(maxPoints).fill(null),
                 fill: false,
                 borderColor: 'rgba(75, 192, 192, 1)',
                 tension: 0.1,
@@ -66,8 +66,7 @@
               animation: false,
               scales: {
                 x: {
-                  display: true,
-                  title: { display: true, text: 'Time' }
+                  display: false  // hide x-axis entirely
                 },
                 y: {
                   display: true,
@@ -91,22 +90,21 @@
             }
             const rms = Math.sqrt(sum / dataArray.length);
             const db = 20 * Math.log10(rms + 1e-6);
-            const now = new Date().toLocaleTimeString();
 
             // Update text
             document.getElementById("out").innerText = `dB: ${db.toFixed(2)}`;
 
-            // Update chart
-            dbChart.data.labels.push(now);
-            dbChart.data.datasets[0].data.push(db);
-            if (dbChart.data.labels.length > 30) {
-              dbChart.data.labels.shift();
-              dbChart.data.datasets[0].data.shift();
+            // Shift data array, push new value
+            const ds = dbChart.data.datasets[0].data;
+            ds.push(db);
+            if (ds.length > maxPoints) {
+              ds.shift();
             }
+            // labels array remains placeholders or empty strings to keep length consistent
+            // (we initialized labels with empty strings)
             dbChart.update();
           }
 
-          // Update every 200 ms
           setInterval(updateMeter, 200);
         })
         .catch(err => {
